@@ -1,6 +1,5 @@
 from django.conf import settings
-from django.contrib.sites.models import RequestSite
-from django.contrib.sites.models import Site
+from django.contrib.sites.models import RequestSite, Site
 
 from registration import signals
 from registration.models import RegistrationProfile
@@ -46,8 +45,15 @@ class RegistrationView(BaseRegistrationView):
     that model and its custom manager for full documentation of its
     fields and supported operations.
 
+    By default, user creation will send an activation email to the
+    address associated with the account. To avoid this behavior, set
+    ``SEND_REGISTRATION_EMAIL`` to ``False`` in your settings. You can
+    also override the URL pattern in your own urls.py and pass
+    ``send_email=False`` to ``RegistrationView.as_view`` (this will over-
+    ride the settings value).
+
     """
-    send_email = True
+    send_email = getattr(settings, 'SEND_REGISTRATION_EMAIL', True)
 
     def register(self, request, **cleaned_data):
         """
@@ -79,7 +85,7 @@ class RegistrationView(BaseRegistrationView):
             site = RequestSite(request)
         new_user = RegistrationProfile.objects.create_inactive_user(
             cleaned_data['username'], cleaned_data['email'],
-            cleaned_data['password1'], site)
+            cleaned_data['password1'], site, send_email=self.send_email)
         signals.user_registered.send(sender=self.__class__, user=new_user,
                                      request=request)
         return new_user
