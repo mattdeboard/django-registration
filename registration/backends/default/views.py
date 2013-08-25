@@ -55,6 +55,13 @@ class RegistrationView(BaseRegistrationView):
     """
     send_email = getattr(settings, 'SEND_ACTIVATION_EMAIL', True)
 
+    def pre_register(self, request=None, *args, **kwargs):
+        pass
+
+    def post_register(self, request, user, *args, **kwargs):
+        signals.user_registered.send(sender=self.__class__, user=user,
+                                     request=request)
+
     def register(self, request, **cleaned_data):
         """
         Given a username, email address and password, register a new
@@ -79,6 +86,7 @@ class RegistrationView(BaseRegistrationView):
         class of this backend as the sender.
 
         """
+        self.pre_register(request, **cleaned_data)
         if Site._meta.installed:
             site = Site.objects.get_current()
         else:
@@ -86,8 +94,7 @@ class RegistrationView(BaseRegistrationView):
         new_user = RegistrationProfile.objects.create_inactive_user(
             cleaned_data['username'], cleaned_data['email'],
             cleaned_data['password1'], site, send_email=self.send_email)
-        signals.user_registered.send(sender=self.__class__, user=new_user,
-                                     request=request)
+        self.post_register(request, new_user)
         return new_user
 
     def registration_allowed(self, request):
@@ -115,6 +122,15 @@ class RegistrationView(BaseRegistrationView):
 
 
 class ActivationView(BaseActivationView):
+    def pre_activate(self, request, activation_key, *args, **kwargs):
+        pass
+
+    def post_activate(self, request, user, *args, **kwargs):
+        if user:
+            signals.user_activated.send(sender=self.__class__,
+                                        user=user,
+                                        request=request)
+
     def activate(self, request, activation_key):
         """
         Given an an activation key, look up and activate the user
@@ -126,12 +142,10 @@ class ActivationView(BaseActivationView):
         the class of this backend as the sender.
 
         """
+        self.pre_activate(request, activation_key)
         activated_user = RegistrationProfile.objects\
                                             .activate_user(activation_key)
-        if activated_user:
-            signals.user_activated.send(sender=self.__class__,
-                                        user=activated_user,
-                                        request=request)
+        self.post_activate(request, activated_user)
         return activated_user
 
     def get_success_url(self, request, user):
