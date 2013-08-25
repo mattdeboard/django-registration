@@ -47,13 +47,13 @@ class RegistrationView(BaseRegistrationView):
 
     By default, user creation will send an activation email to the
     address associated with the account. To avoid this behavior, set
-    ``SEND_REGISTRATION_EMAIL`` to ``False`` in your settings. You can
+    ``SEND_ACTIVATION_EMAIL`` to ``False`` in your settings. You can
     also override the URL pattern in your own urls.py and pass
     ``send_email=False`` to ``RegistrationView.as_view`` (this will over-
     ride the settings value).
 
     """
-    send_email = getattr(settings, 'SEND_REGISTRATION_EMAIL', True)
+    send_email = getattr(settings, 'SEND_ACTIVATION_EMAIL', True)
 
     def register(self, request, **cleaned_data):
         """
