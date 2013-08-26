@@ -82,7 +82,7 @@ class RegistrationManager(models.Manager):
         registration_profile = self.create_profile(new_user)
 
         if send_email:
-            registration_profile.send_activation_email(site)
+            registration_profile.send_activation_email(site=site)
 
         return new_user
     create_inactive_user = transaction.commit_on_success(create_inactive_user)
